@@ -48,9 +48,22 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
+    - name: DBT Compile
+      run: |
+        source ~/workspace/dbt-env/bin/activate
+        dbt compile --profiles-dir ./ci_profiles
+
+    - name: Archive manifest.json
+      uses: actions/upload-artifact@v2
+      with:
+        name: manifest
+        path: |
+          ./target/manifest.json
+
   prod:
     environment: production
     runs-on: ubuntu-latest
+    needs: setup-envt
 
     steps:
     - name: Checkout branch
@@ -73,8 +86,14 @@ jobs:
           ${{ runner.os }}-build-
           ${{ runner.os }}-
 
+    - name: Download manifest.json
+      uses: actions/download-artifact@v2
+      with:
+        name: manifest
+
     - name: Deploy
       run: |
+        echo "LSLTR is $(ls -ltr)"
         source ~/workspace/dbt-env/bin/activate
         dbt run --profiles-dir ./ci_profiles
         dbt test --profiles-dir ./ci_profiles
