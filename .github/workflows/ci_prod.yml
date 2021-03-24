@@ -30,8 +30,23 @@ jobs:
 
     - name: Install DBT
       run: |
+        mkdir -p ~/workspace/
+        python -m venv ~/workspace/dbt-env
+        source ~/workspace/dbt-env/bin/activate
         python -m pip install --upgrade pip
         pip install dbt
+
+    - name: Cache-DBT-setup
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-dbt-setup
+      with:
+        # DBT runtime is stored in `~/bin` on Linux/macOS
+        path: ~/workspace/dbt-env
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
 
   prod:
     environment: production
@@ -46,13 +61,21 @@ jobs:
       with:
         python-version: 3.8
 
-    - name: Install DBT
-      run: |
-        python -m pip install --upgrade pip
-        pip install dbt
+    - name: Cache-DBT-setup
+      uses: actions/cache@v2
+      env:
+        cache-name: cache-dbt-setup
+      with:
+        # DBT runtime is stored in `~/bin` on Linux/macOS
+        path: ~/workspace/dbt-env
+        key: ${{ runner.os }}-build-${{ env.cache-name }}
+        restore-keys: |
+          ${{ runner.os }}-build-
+          ${{ runner.os }}-
 
     - name: Deploy
       run: |
+        source ~/workspace/dbt-env/bin/activate
         dbt run --profiles-dir ./ci_profiles
         dbt test --profiles-dir ./ci_profiles
     
